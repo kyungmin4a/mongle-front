@@ -42,7 +42,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-background/70 backdrop-blur-xl shadow-[0px_20px_40px_rgba(39,48,87,0.06)]">
+    <nav className="fixed top-0 w-full z-50 bg-background border-b border-primary/5 shadow-[0px_20px_40px_rgba(39,48,87,0.06)]">
       <div className="flex justify-between items-center px-8 h-20 max-w-7xl mx-auto">
         <Link to="/" className="text-2xl font-bold text-primary font-headline tracking-tight" onClick={() => setIsMobileMenuOpen(false)}>
           Mongle
@@ -107,7 +107,7 @@ const Navbar = () => {
             exit={{ opacity: 0, y: -20 }}
             className="md:hidden absolute top-full left-0 right-0 p-4"
           >
-            <div className="glass-card rounded-3xl p-6 flex flex-col gap-4 shadow-2xl border border-white/20">
+            <div className="bg-background rounded-3xl p-6 flex flex-col gap-4 shadow-2xl border border-primary/10">
               {navLinks.map(link => (
                 <Link 
                   key={link.to}
