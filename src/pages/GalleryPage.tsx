@@ -13,7 +13,7 @@ const GalleryPage = () => {
       <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="space-y-4">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold leading-tight">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-headline font-extrabold leading-tight tracking-tight text-on-surface">
               무한한 세계, <br />
               <span className="text-primary italic">한 페이지씩</span> 완성돼요
             </h1>
