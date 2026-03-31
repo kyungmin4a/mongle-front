@@ -16,6 +16,7 @@ import ProfilePage from "./pages/ProfilePage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import UnderConstructionPage from "./pages/UnderConstructionPage";
+import AboutPage from "./pages/AboutPage";
 
 // --- Main App ---
 
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="/coming-soon" element={<UnderConstructionPage />} />
             <Route path="*" element={<UnderConstructionPage />} />
           </Routes>
