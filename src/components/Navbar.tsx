@@ -108,12 +108,10 @@ const Navbar = () => {
           <Link 
             to="/create" 
             onClick={(e) => handleProtectedClick(e, "/create")}
-            className="flex flex-col items-center justify-center -mt-8"
+            className={cn("flex flex-col items-center gap-1 transition-colors", location.pathname === "/create" ? "text-primary" : "text-on-surface-variant")}
           >
-            <div className="w-14 h-14 bg-primary rounded-full flex items-center justify-center text-white shadow-lg shadow-primary/30 active:scale-90 transition-transform">
-              <PlusCircle size={28} />
-            </div>
-            <span className="text-[10px] font-bold mt-1 text-primary">동화 만들기</span>
+            <PlusCircle size={20} />
+            <span className="text-[10px] font-bold">동화 만들기</span>
           </Link>
           {isLoggedIn ? (
             <Link to="/profile" className={cn("flex flex-col items-center gap-1 transition-colors", location.pathname === "/profile" ? "text-primary" : "text-on-surface-variant")}>
