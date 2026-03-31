@@ -24,7 +24,7 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-background selection:bg-primary/20 selection:text-primary flex flex-col">
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-grow pb-24 md:pb-0">
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/explore" element={<GalleryPage />} />
@@ -39,7 +39,9 @@ export default function App() {
             <Route path="*" element={<UnderConstructionPage />} />
           </Routes>
         </main>
-        <Footer />
+        <div className="hidden md:block">
+          <Footer />
+        </div>
       </div>
     </Router>
   );

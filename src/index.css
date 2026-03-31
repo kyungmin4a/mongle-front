@@ -82,3 +82,7 @@
   box-shadow: 20px 20px 60px rgba(0, 0, 0, 0.1),
               -5px -5px 20px rgba(255, 255, 255, 0.5);
 }
+
+.pb-safe-area-inset-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
