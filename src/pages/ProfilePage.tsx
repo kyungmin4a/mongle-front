@@ -47,7 +47,7 @@ const ProfilePage = () => {
             </div>
           </div>
           <div className="flex flex-col gap-3 w-full md:w-auto">
-            <button className="px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg hover:bg-secondary transition-all text-sm md:text-base">프로필 수정</button>
+            <button onClick={() => navigate("/profile/edit")} className="px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-lg hover:bg-secondary transition-all text-sm md:text-base">프로필 수정</button>
             <button className="px-6 py-3 glass rounded-xl font-bold hover:bg-white transition-all text-sm md:text-base">설정</button>
           </div>
         </div>

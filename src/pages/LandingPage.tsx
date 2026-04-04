@@ -83,12 +83,12 @@ const LandingPage = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 1 }}
-          className="mt-16 md:mt-24 w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-8"
+          className="mt-16 md:mt-24 w-[calc(100%+3rem)] -mx-6 px-6 md:w-full md:mx-0 md:px-0 max-w-6xl flex overflow-x-auto snap-x snap-mandatory gap-6 pb-8 md:grid md:grid-cols-3 md:overflow-visible md:snap-none md:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
           {featuredBooks.map((book, index) => (
             <div 
               key={index}
-              className="group relative aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50 hover:-translate-y-2 transition-transform duration-300"
+              className="group relative aspect-[3/4] w-[75vw] sm:w-[50vw] md:w-auto shrink-0 snap-center rounded-3xl overflow-hidden shadow-2xl border-4 border-white/50 hover:-translate-y-2 transition-transform duration-300"
             >
               <img 
                 src={book.image} 
