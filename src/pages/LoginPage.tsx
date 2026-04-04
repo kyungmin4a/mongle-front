@@ -22,12 +22,14 @@ const LoginPage = () => {
       origin: { y: 0.6 },
       colors: ['#6366f1', '#a855f7', '#ec4899']
     });
+  };
 
-    // Redirect after a delay
-    setTimeout(() => {
-      navigate("/");
-      window.location.reload(); // Refresh to update navbar state
-    }, 2000);
+  const goHome = () => {
+    window.location.href = "/";
+  };
+
+  const goProfile = () => {
+    window.location.href = "/profile";
   };
 
   return (
@@ -90,12 +92,27 @@ const LoginPage = () => {
               animate={{ opacity: 1, scale: 1 }}
               className="relative z-10 w-full max-w-md text-center"
             >
-              <div className="glass-card rounded-2xl p-12 shadow-2xl border border-white/30 flex flex-col items-center">
+              <div className="glass-card rounded-2xl p-10 shadow-2xl border border-white/30 flex flex-col items-center">
                 <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6 text-primary">
                   <Sparkles size={40} className="animate-pulse" />
                 </div>
                 <h2 className="text-3xl font-headline font-black text-on-surface mb-2">반가워요!</h2>
-                <p className="text-on-surface-variant font-medium">로그인에 성공했습니다. <br /> 곧 마법의 숲으로 안내할게요.</p>
+                <p className="text-on-surface-variant font-medium mb-8">로그인에 성공했습니다. <br /> 어디로 이동할까요?</p>
+                
+                <div className="flex flex-col sm:flex-row gap-4 w-full">
+                  <button 
+                    onClick={goHome}
+                    className="flex-1 py-4 bg-primary text-white rounded-xl font-bold shadow-lg hover:bg-secondary transition-all"
+                  >
+                    홈으로
+                  </button>
+                  <button 
+                    onClick={goProfile}
+                    className="flex-1 py-4 glass rounded-xl font-bold hover:bg-white transition-all text-on-surface"
+                  >
+                    나의 프로필로
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
