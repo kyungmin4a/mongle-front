@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+ï»¿import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { Sparkles, BookOpen, Users, Flag, X } from "lucide-react";
 import { fetchBookDetail, type BookDetail } from "../lib/api";
 
-const reportReasons = ["½ºÆÔ/±¤°í", "ºÎÀûÀıÇÑ ³»¿ë", "ÀúÀÛ±Ç Ä§ÇØ", "±âÅ¸"] as const;
+const reportReasons = ["ìŠ¤íŒ¸/ê´‘ê³ ", "ë¶€ì ì ˆí•œ ë‚´ìš©", "ì €ì‘ê¶Œ ì¹¨í•´", "ê¸°íƒ€"] as const;
 
 const BookDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +13,7 @@ const BookDetailPage = () => {
   const [error, setError] = useState(false);
 
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [reportReason, setReportReason] = useState<(typeof reportReasons)[number]>("½ºÆÔ/±¤°í");
+  const [reportReason, setReportReason] = useState<(typeof reportReasons)[number]>("ìŠ¤íŒ¸/ê´‘ê³ ");
   const [reportDetail, setReportDetail] = useState("");
   const [reportDone, setReportDone] = useState(false);
 
@@ -31,11 +31,10 @@ const BookDetailPage = () => {
 
   const handleSubmitReport = (e: React.FormEvent) => {
     e.preventDefault();
-    // ÇöÀç´Â UI Á¦Ãâ¸¸ Ã³¸®ÇÕ´Ï´Ù.
     setIsReportOpen(false);
     setReportDone(true);
     setReportDetail("");
-    setReportReason("½ºÆÔ/±¤°í");
+    setReportReason("ìŠ¤íŒ¸/ê´‘ê³ ");
     window.setTimeout(() => setReportDone(false), 2500);
   };
 
@@ -50,9 +49,9 @@ const BookDetailPage = () => {
   if (error || !book) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-on-surface-variant text-lg">Ã¥À» Ã£À» ¼ö ¾ø½À´Ï´Ù.</p>
+        <p className="text-on-surface-variant text-lg">ì±…ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.</p>
         <Link to="/explore" className="text-primary font-bold hover:underline">
-          ¸ñ·ÏÀ¸·Î µ¹¾Æ°¡±â
+          ëª©ë¡ìœ¼ë¡œ ëŒì•„ê°€ê¸°
         </Link>
       </div>
     );
@@ -69,13 +68,13 @@ const BookDetailPage = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-300 bg-red-50 text-red-600 font-bold hover:bg-red-100 transition-colors"
             >
               <Flag size={16} />
-              ½Å°í
+              ì‹ ê³ 
             </button>
           </div>
 
           {reportDone && (
             <div className="rounded-xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm text-primary font-bold">
-              ½Å°í°¡ Á¢¼öµÇ¾ú½À´Ï´Ù. °ËÅä ÈÄ Á¶Ä¡ÇÒ°Ô¿ä.
+              ì‹ ê³ ê°€ ì ‘ìˆ˜ë˜ì—ˆìŠµë‹ˆë‹¤. ê²€í†  í›„ ì¡°ì¹˜í• ê²Œìš”.
             </div>
           )}
 
@@ -93,20 +92,20 @@ const BookDetailPage = () => {
                 <div className="flex-grow md:hidden pt-1">
                   <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-[11px] mb-2">
                     <Sparkles size={14} />
-                    AI ±×¸²Ã¥
+                    AI ê·¸ë¦¼ì±…
                   </div>
                   <h1 className="text-3xl font-display font-bold leading-tight mb-2">{book.title}</h1>
-                  <p className="text-on-surface-variant text-base font-medium mb-2">{book.authorName} ÀÛ°¡</p>
+                  <p className="text-on-surface-variant text-base font-medium mb-2">{book.authorName} ì‘ê°€</p>
                   <div className="flex items-center gap-1.5 text-on-surface-variant">
                     <BookOpen size={16} />
-                    <span className="text-sm font-medium">{book.pages.length} ÆäÀÌÁö</span>
+                    <span className="text-sm font-medium">{book.pages.length} í˜ì´ì§€</span>
                   </div>
                 </div>
               </div>
 
               <div className="hidden md:flex flex-col gap-4">
                 <Link to={`/read/${book.bookId}`} className="w-full bg-primary text-white py-4 md:py-5 rounded-2xl text-center font-bold text-lg shadow-xl hover:bg-secondary transition-all active:scale-95">
-                  ÀÌ¾ß±â ÀĞ±â
+                  ì´ì•¼ê¸° ì½ê¸°
                 </Link>
               </div>
             </div>
@@ -119,42 +118,42 @@ const BookDetailPage = () => {
               <div className="hidden md:block space-y-4">
                 <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-widest text-sm">
                   <Sparkles size={16} />
-                  AI ±×¸²Ã¥
+                  AI ê·¸ë¦¼ì±…
                 </div>
                 <h1 className="text-6xl font-display font-bold leading-tight">{book.title}</h1>
                 <div className="flex items-center gap-4">
-                  <span className="font-bold">{book.authorName} ÀÛ°¡</span>
+                  <span className="font-bold">{book.authorName} ì‘ê°€</span>
                   <div className="h-4 w-[1px] bg-on-surface-variant/20" />
                   <div className="flex items-center gap-1.5 text-on-surface-variant">
                     <BookOpen size={18} />
-                    <span className="font-medium">{book.pages.length} ÆäÀÌÁö</span>
+                    <span className="font-medium">{book.pages.length} í˜ì´ì§€</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col gap-3 md:hidden">
                 <Link to={`/read/${book.bookId}`} className="w-full bg-primary text-white py-4 rounded-xl text-center font-bold text-lg shadow-lg active:scale-95">
-                  ÀÌ¾ß±â ÀĞ±â
+                  ì´ì•¼ê¸° ì½ê¸°
                 </Link>
               </div>
 
               <div className="grid grid-cols-3 gap-3 md:gap-4">
                 <div className="glass p-3 md:p-4 rounded-xl md:rounded-2xl text-center">
-                  <p className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase mb-1">ºĞ·®</p>
-                  <p className="font-bold text-sm md:text-base">{book.pages.length} ÆäÀÌÁö</p>
+                  <p className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase mb-1">ë¶„ëŸ‰</p>
+                  <p className="font-bold text-sm md:text-base">{book.pages.length} í˜ì´ì§€</p>
                 </div>
                 <div className="glass p-3 md:p-4 rounded-xl md:rounded-2xl text-center">
-                  <p className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase mb-1">µîÀåÀÎ¹°</p>
-                  <p className="font-bold text-sm md:text-base">{book.characters.length}¸í</p>
+                  <p className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase mb-1">ë“±ì¥ì¸ë¬¼</p>
+                  <p className="font-bold text-sm md:text-base">{book.characters.length}ëª…</p>
                 </div>
                 <div className="glass p-3 md:p-4 rounded-xl md:rounded-2xl text-center">
-                  <p className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase mb-1">Çü½Ä</p>
-                  <p className="font-bold text-sm md:text-base">¼¼·ÎÇü</p>
+                  <p className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase mb-1">í˜•ì‹</p>
+                  <p className="font-bold text-sm md:text-base">ì„¸ë¡œí˜•</p>
                 </div>
               </div>
 
               <div className="space-y-3 md:space-y-4">
-                <h3 className="text-xl md:text-2xl font-bold">ÀÌ¾ß±â ¼Ò°³</h3>
+                <h3 className="text-xl md:text-2xl font-bold">ì´ì•¼ê¸° ì†Œê°œ</h3>
                 <p className="text-on-surface-variant leading-relaxed text-base md:text-lg">{book.description}</p>
               </div>
 
@@ -162,7 +161,7 @@ const BookDetailPage = () => {
                 <div className="space-y-4 pt-8 border-t border-on-surface-variant/10">
                   <h3 className="text-xl md:text-2xl font-bold flex items-center gap-2">
                     <Users size={22} />
-                    µîÀåÀÎ¹°
+                    ë“±ì¥ì¸ë¬¼
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {book.characters.map((character, i) => (
@@ -179,12 +178,12 @@ const BookDetailPage = () => {
                 <div className="space-y-4 pt-8 border-t border-on-surface-variant/10">
                   <h3 className="text-xl md:text-2xl font-bold flex items-center gap-2">
                     <BookOpen size={22} />
-                    ¹Ì¸®º¸±â
+                    ë¯¸ë¦¬ë³´ê¸°
                   </h3>
                   <div className="space-y-4">
                     {book.pages.map((page) => (
                       <div key={page.pageNumber} className="glass p-4 md:p-6 rounded-2xl space-y-2">
-                        <p className="text-xs font-bold text-primary uppercase">{page.pageNumber} ÆäÀÌÁö</p>
+                        <p className="text-xs font-bold text-primary uppercase">{page.pageNumber} í˜ì´ì§€</p>
                         <p className="text-on-surface-variant leading-relaxed text-sm md:text-base">{page.content}</p>
                       </div>
                     ))}
@@ -200,7 +199,7 @@ const BookDetailPage = () => {
         <div className="fixed inset-0 z-[90] bg-black/55 px-4 flex items-center justify-center" onClick={() => setIsReportOpen(false)}>
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-on-surface">ÀÛÇ° ½Å°í</h2>
+              <h2 className="text-xl font-bold text-on-surface">ì‘í’ˆ ì‹ ê³ </h2>
               <button type="button" onClick={() => setIsReportOpen(false)} className="text-on-surface-variant hover:text-on-surface">
                 <X size={20} />
               </button>
@@ -208,7 +207,7 @@ const BookDetailPage = () => {
 
             <form onSubmit={handleSubmitReport} className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm font-bold text-on-surface">½Å°í »çÀ¯</p>
+                <p className="text-sm font-bold text-on-surface">ì‹ ê³  ì‚¬ìœ </p>
                 <div className="grid grid-cols-2 gap-2">
                   {reportReasons.map((reason) => (
                     <button
@@ -229,14 +228,14 @@ const BookDetailPage = () => {
 
               <div className="space-y-2">
                 <label htmlFor="report-detail" className="text-sm font-bold text-on-surface">
-                  »ó¼¼ ³»¿ë
+                  ìƒì„¸ ë‚´ìš©
                 </label>
                 <textarea
                   id="report-detail"
                   value={reportDetail}
                   onChange={(e) => setReportDetail(e.target.value)}
                   rows={4}
-                  placeholder="½Å°í ³»¿ëÀ» ÀÔ·ÂÇØÁÖ¼¼¿ä."
+                  placeholder="ì‹ ê³  ë‚´ìš©ì„ ì…ë ¥í•´ì£¼ì„¸ìš”."
                   className="w-full px-3 py-2 rounded-lg border border-outline-variant/40 focus:outline-none focus:border-primary"
                 />
               </div>
@@ -247,10 +246,10 @@ const BookDetailPage = () => {
                   onClick={() => setIsReportOpen(false)}
                   className="flex-1 py-3 rounded-xl border border-outline-variant/40 text-on-surface-variant font-bold hover:bg-surface-container-low"
                 >
-                  Ãë¼Ò
+                  ì·¨ì†Œ
                 </button>
                 <button type="submit" className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700">
-                  ½Å°í Á¢¼ö
+                  ì‹ ê³  ì ‘ìˆ˜
                 </button>
               </div>
             </form>

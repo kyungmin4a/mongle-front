@@ -1,30 +1,27 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+﻿import React, { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { Sparkles, Palette, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
-import { isLoggedIn } from "../lib/auth";
 import { fetchBooks, type BookItem } from "../lib/api";
 
 const LandingPage = () => {
-  const navigate = useNavigate();
   const [books, setBooks] = useState<BookItem[]>([]);
   const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetchBooks(0, 6).then((data) => setBooks(data.content)).catch(() => {});
+    fetchBooks(0, 6)
+      .then((data) => setBooks(data.content))
+      .catch(() => {});
   }, []);
 
-  // 무한 슬라이드: 3배 복제
   const displayBooks = books.length > 0 ? [...books, ...books, ...books] : [];
 
-  // 초기 스크롤 위치를 중간(2번째 세트)으로 설정
   useEffect(() => {
     const slider = sliderRef.current;
     if (!slider || books.length === 0) return;
     slider.scrollLeft = slider.scrollWidth / 3;
   }, [books]);
 
-  // 스크롤이 끝나면 경계에서 즉시 위치 리셋 (무한 루프)
   useEffect(() => {
     const slider = sliderRef.current;
     if (!slider || books.length === 0) return;
@@ -51,17 +48,6 @@ const LandingPage = () => {
     };
   }, [books]);
 
-  const handleCreateClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (!isLoggedIn()) {
-      if (window.confirm("로그인이 필요한 서비스입니다. 로그인 페이지로 이동하시겠습니까?")) {
-        navigate("/login");
-      }
-    } else {
-      navigate("/create");
-    }
-  };
-
   const scroll = (direction: "left" | "right") => {
     if (!sliderRef.current) return;
     const scrollAmount = sliderRef.current.clientWidth * 0.6;
@@ -86,22 +72,23 @@ const LandingPage = () => {
             <Sparkles size={16} />
             AI 기반 스토리텔링
           </div>
+
           <h1 className="text-4xl md:text-6xl lg:text-8xl font-headline font-extrabold leading-tight md:leading-tight max-w-4xl mx-auto text-on-surface tracking-tight">
-            AI로 당신만의 <br /> <span className="text-primary italic">마법 같은</span> 동화책을 <br />만들어보세요
+            AI로 당신만의 <br />
+            <span className="text-primary italic">마법 같은</span> 동화책을 <br />
+            만들어보세요
           </h1>
+
           <p className="text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto font-body font-medium">
-            아이의 상상력이 현실이 되는 공간이에요. 몇 번의 클릭만으로 고퀄리티 일러스트와 함께 나만의 이야기를 완성해보세요.
+            아이디어만 있다면 누구나 몇 번의 클릭으로 일러스트와 이야기를 완성할 수 있어요.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+
+          <div className="flex justify-center pt-8">
             <Link
-              to="/create"
-              onClick={handleCreateClick}
+              to="/dashboard"
               className="px-10 py-5 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full text-lg font-bold shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1 active:scale-95"
             >
               지금 시작하기
-            </Link>
-            <Link to="/explore" className="px-10 py-5 glass-card text-on-surface rounded-full text-lg font-bold hover:bg-white transition-all hover:-translate-y-1 active:scale-95 border border-white/20">
-              갤러리 둘러보기
             </Link>
           </div>
         </motion.div>
@@ -163,21 +150,23 @@ const LandingPage = () => {
                 <Sparkles size={32} />
               </div>
               <h4 className="text-2xl font-headline font-bold text-on-surface">AI 스토리텔링</h4>
-              <p className="text-on-surface-variant font-body">간단한 키워드만으로 풍부하고 교훈적인 이야기를 생성해요.</p>
+              <p className="text-on-surface-variant font-body">간단한 키워드만으로도 몰입감 있는 이야기를 생성할 수 있어요.</p>
             </div>
+
             <div className="space-y-4 p-8 rounded-3xl glass-card border border-white/20">
               <div className="w-16 h-16 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary">
                 <Palette size={32} />
               </div>
-              <h4 className="text-2xl font-headline font-bold text-on-surface">마법 수채화</h4>
-              <p className="text-on-surface-variant font-body">수채화부터 유화까지, AI가 그리는 마법 같은 일러스트레이션이에요.</p>
+              <h4 className="text-2xl font-headline font-bold text-on-surface">마법 일러스트</h4>
+              <p className="text-on-surface-variant font-body">수채화부터 만화풍까지, AI가 이야기 장면을 생생하게 그려줘요.</p>
             </div>
+
             <div className="space-y-4 p-8 rounded-3xl glass-card border border-white/20">
               <div className="w-16 h-16 bg-tertiary/10 rounded-2xl flex items-center justify-center text-tertiary">
                 <BookOpen size={32} />
               </div>
-              <h4 className="text-2xl font-headline font-bold text-on-surface">실물 도서 제작</h4>
-              <p className="text-on-surface-variant font-body">디지털을 넘어 실제 하드커버 책으로 간직할 수 있어요.</p>
+              <h4 className="text-2xl font-headline font-bold text-on-surface">출간까지 한 번에</h4>
+              <p className="text-on-surface-variant font-body">완성한 작품을 저장하고 실제 책처럼 감상해보세요.</p>
             </div>
           </div>
         </div>
