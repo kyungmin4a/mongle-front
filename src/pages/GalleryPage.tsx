@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { BookOpen, Search, SlidersHorizontal, X, Heart } from "lucide-react";
 import { fetchBooks, type BookItem } from "../lib/api";
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 12;
 type SortOption = "newest" | "titleAsc" | "titleDesc";
 
 type LikedMap = Record<string, boolean>;
@@ -19,6 +19,7 @@ const GalleryPage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [likedMap, setLikedMap] = useState<LikedMap>({});
   const observerRef = useRef<HTMLDivElement>(null);
+  const animatedIdsRef = useRef<Set<string>>(new Set());
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -55,7 +56,7 @@ const GalleryPage = () => {
 
   const visibleBooks = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    let result = [...books];
+    let result = books;
 
     if (normalized) {
       result = result.filter(
@@ -66,12 +67,11 @@ const GalleryPage = () => {
     }
 
     if (sort === "titleAsc") {
-      result.sort((a, b) => a.title.localeCompare(b.title));
+      result = [...result].sort((a, b) => a.title.localeCompare(b.title));
     } else if (sort === "titleDesc") {
-      result.sort((a, b) => b.title.localeCompare(a.title));
-    } else {
-      result.sort((a, b) => b.bookId.localeCompare(a.bookId));
+      result = [...result].sort((a, b) => b.title.localeCompare(a.title));
     }
+    // "newest"는 API가 반환한 순서를 그대로 사용 (클라이언트 재정렬 금지)
 
     return result;
   }, [books, query, sort]);
@@ -165,12 +165,14 @@ const GalleryPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {visibleBooks.map((book, i) => {
             const liked = likedMap[book.bookId] ?? false;
+            const alreadyAnimated = animatedIdsRef.current.has(book.bookId);
+            if (!alreadyAnimated) animatedIdsRef.current.add(book.bookId);
             return (
               <motion.div
                 key={book.bookId}
-                initial={{ opacity: 0, y: 20 }}
+                initial={alreadyAnimated ? false : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: (i % PAGE_SIZE) * 0.1 }}
+                transition={{ duration: 0.35, delay: alreadyAnimated ? 0 : (i % 4) * 0.05 }}
                 className="group cursor-pointer"
               >
                 <Link to={`/book/${book.bookId}`} className="flex flex-row sm:flex-col gap-4 sm:gap-0">
