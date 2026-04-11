@@ -1,21 +1,14 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { Sparkles, Palette, BookOpen, Flame, Clock3, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchBooks, type BookItem } from "../lib/api";
 import { isLoggedIn, fetchUserMe, removeAccessToken, clearUserCache } from "../lib/auth";
 
-const HERO_BANNERS = [
-  {
-    src: "https://img.mongle.cloud/picturebook/users/9311196f-aceb-41ef-937f-e04bda9de4b9/66ee6490-053d-4211-9a24-24f4b93101e9.png",
-    alt: "AI로 만드는 마법 같은 동화책",
-  },
-  {
-    src: "https://img.mongle.cloud/picturebook/users/9311196f-aceb-41ef-937f-e04bda9de4b9/0f845712-3c82-4586-be72-6ca142991c87.png",
-    alt: "아이디어만 있다면 누구나 작가",
-  },
-];
-const BANNER_INTERVAL_MS = 5000;
+const HERO_ILLUSTRATION = {
+  src: "https://img.mongle.cloud/picturebook/users/9311196f-aceb-41ef-937f-e04bda9de4b9/66ee6490-053d-4211-9a24-24f4b93101e9.png",
+  alt: "AI로 만드는 나만의 동화책",
+};
 
 const CATEGORIES = [
   { id: "all", label: "전체" },
@@ -33,9 +26,10 @@ type SliderSectionProps = {
   books: BookItem[];
   accentClass: string;
   showRank?: boolean;
+  moreLink?: string;
 };
 
-const SliderSection = ({ title, icon, books, accentClass, showRank = false }: SliderSectionProps) => {
+const SliderSection = ({ title, icon, books, accentClass, showRank = false, moreLink }: SliderSectionProps) => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const displayBooks = useMemo(
     () => (showRank ? books : books.length > 0 ? [...books, ...books, ...books] : []),
@@ -87,9 +81,19 @@ const SliderSection = ({ title, icon, books, accentClass, showRank = false }: Sl
 
   return (
     <div className="space-y-4 md:space-y-5 relative">
-      <div className={`flex items-center gap-2 font-bold text-base md:text-xl px-1 md:px-0 ${accentClass}`}>
-        {icon}
-        {title}
+      <div className="flex items-center justify-between px-1 md:px-0">
+        <div className={`flex items-center gap-2 font-bold text-base md:text-xl ${accentClass}`}>
+          {icon}
+          {title}
+        </div>
+        {moreLink && (
+          <Link
+            to={moreLink}
+            className="text-xs md:text-sm font-bold text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            더보기 ›
+          </Link>
+        )}
       </div>
 
       <button
@@ -112,7 +116,7 @@ const SliderSection = ({ title, icon, books, accentClass, showRank = false }: Sl
 
       <div
         ref={sliderRef}
-        className="flex gap-4 md:gap-5 overflow-x-auto pb-2 px-1 md:px-10 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="flex gap-4 md:gap-5 overflow-x-auto pb-2 px-1 md:px-10 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         {displayBooks.map((book, index) => {
           const rank = showRank ? index + 1 : null;
@@ -120,7 +124,7 @@ const SliderSection = ({ title, icon, books, accentClass, showRank = false }: Sl
             <Link
               to={`/book/${book.bookId}`}
               key={`${title}-${book.bookId}-${index}`}
-              className="group shrink-0 w-[44vw] sm:w-[30vw] md:w-[220px] lg:w-[260px]"
+              className="group shrink-0 w-[44vw] sm:w-[30vw] md:w-[220px] lg:w-[260px] snap-start transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-md mb-3 bg-surface-container-lowest">
                 <img
@@ -139,7 +143,7 @@ const SliderSection = ({ title, icon, books, accentClass, showRank = false }: Sl
                   </div>
                 )}
               </div>
-              <h3 className="font-bold text-sm md:text-base text-on-surface line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+              <h3 className="font-bold text-sm md:text-base text-on-surface line-clamp-2 leading-snug min-h-[2.75em] group-hover:text-primary transition-colors">
                 {book.title}
               </h3>
               <p className="text-xs md:text-sm text-on-surface-variant mt-1">{book.authorName} 작가</p>
@@ -153,7 +157,6 @@ const SliderSection = ({ title, icon, books, accentClass, showRank = false }: Sl
 
 const LandingPage = () => {
   const [books, setBooks] = useState<BookItem[]>([]);
-  const [bannerIndex, setBannerIndex] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const navigate = useNavigate();
 
@@ -161,13 +164,6 @@ const LandingPage = () => {
     fetchBooks(0, 20)
       .then((data) => setBooks(data.content))
       .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setBannerIndex((prev) => (prev + 1) % HERO_BANNERS.length);
-    }, BANNER_INTERVAL_MS);
-    return () => clearInterval(id);
   }, []);
 
   const bestBooks = useMemo(() => [...books].reverse().slice(0, 10), [books]);
@@ -191,61 +187,56 @@ const LandingPage = () => {
     <div className="min-h-screen pt-24 magical-gradient relative overflow-hidden">
       <div className="absolute inset-0 z-0 opacity-10 pointer-events-none storybook-bg" />
 
-      <section className="max-w-7xl mx-auto px-6 pt-4 pb-12 md:pt-6 md:pb-20 flex flex-col items-center text-center relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="space-y-6"
-        >
-          <div className="relative w-screen md:w-[65vw] md:max-w-5xl aspect-video left-1/2 -translate-x-1/2 md:rounded-3xl overflow-hidden shadow-2xl md:border md:border-white/60 bg-surface-container-lowest">
-            <AnimatePresence mode="wait">
-              <motion.img
-                key={bannerIndex}
-                src={HERO_BANNERS[bannerIndex].src}
-                alt={HERO_BANNERS[bannerIndex].alt}
-                initial={{ opacity: 0, scale: 1.02 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="absolute inset-0 w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </AnimatePresence>
-
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
-              {HERO_BANNERS.map((_, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setBannerIndex(i)}
-                  aria-label={`${i + 1}번 배너로 이동`}
-                  className={`h-2.5 rounded-full transition-all duration-300 ${
-                    i === bannerIndex ? "w-8 bg-white" : "w-2.5 bg-white/60 hover:bg-white/80"
-                  }`}
-                />
-              ))}
+      <section className="max-w-7xl mx-auto px-6 pt-6 pb-12 md:pt-16 md:pb-20 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center md:text-left space-y-5 md:space-y-7 order-2 md:order-1"
+          >
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-headline font-black leading-tight text-on-surface">
+              AI로 나만의 <span className="text-primary">이야기</span>를
+              <br />
+              <span className="text-primary">그림책</span>으로 만들어보세요
+            </h1>
+            <p className="text-sm md:text-lg text-on-surface-variant leading-relaxed font-body">
+              아이디어만 있다면 누구나 쉽게
+              <br className="hidden sm:block" />
+              나만의 동화를 완성할 수 있어요.
+            </p>
+            <div className="pt-2 flex justify-center md:justify-start">
+              <button
+                type="button"
+                onClick={handleStartClick}
+                className="inline-flex items-center gap-2 px-8 py-4 md:px-10 md:py-5 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full text-base md:text-lg font-bold shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1 active:scale-95"
+              >
+                <Sparkles size={18} />
+                지금 시작하기
+              </button>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="pt-6 md:pt-8">
-            <button
-              type="button"
-              onClick={handleStartClick}
-              className="inline-flex px-10 py-5 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-full text-lg font-bold shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1 active:scale-95"
-            >
-              지금 시작하기
-            </button>
-          </div>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="order-1 md:order-2 relative aspect-video md:aspect-[4/3] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border border-white/60 bg-surface-container-lowest"
+          >
+            <img
+              src={HERO_ILLUSTRATION.src}
+              alt={HERO_ILLUSTRATION.alt}
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+          </motion.div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="mt-5 md:mt-12 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="mt-8 md:mt-14 w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         >
           <div className="flex gap-2 md:gap-3 justify-start md:justify-center px-2 min-w-max md:min-w-0">
             {CATEGORIES.map((cat) => (
@@ -279,12 +270,14 @@ const LandingPage = () => {
                 books={bestBooks}
                 accentClass="text-secondary"
                 showRank
+                moreLink="/explore"
               />
               <SliderSection
                 title="신간 도서"
                 icon={<Clock3 size={18} />}
                 books={latestBooks}
                 accentClass="text-primary"
+                moreLink="/explore"
               />
             </div>
           </motion.div>
