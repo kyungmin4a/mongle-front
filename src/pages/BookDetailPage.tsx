@@ -86,7 +86,15 @@ const BookDetailPage = () => {
                   animate={{ opacity: 1, x: 0 }}
                   className="w-[150px] md:w-full aspect-[3/4] rounded-2xl md:rounded-3xl overflow-hidden book-shadow flex-shrink-0"
                 >
-                  <img src={book.coverImageUrl} alt={book.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <img
+                    src={book.coverImageUrl}
+                    alt={book.title}
+                    className="w-full h-full object-cover"
+                    loading="eager"
+                    fetchPriority="high"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                  />
                 </motion.div>
 
                 <div className="flex-grow md:hidden pt-1">
@@ -94,7 +102,7 @@ const BookDetailPage = () => {
                     <Sparkles size={14} />
                     AI 그림책
                   </div>
-                  <h1 className="text-3xl font-display font-bold leading-tight mb-2">{book.title}</h1>
+                  <h2 className="text-3xl font-display font-bold leading-tight mb-2">{book.title}</h2>
                   <p className="text-on-surface-variant text-base font-medium mb-2">{book.authorName} 작가</p>
                   <div className="flex items-center gap-1.5 text-on-surface-variant">
                     <BookOpen size={16} />
@@ -261,3 +269,4 @@ const BookDetailPage = () => {
 };
 
 export default BookDetailPage;
+
