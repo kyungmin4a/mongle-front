@@ -1,7 +1,7 @@
-﻿import React, { useEffect } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { BookOpen, Clock, TrendingUp, Heart, ArrowLeft, CheckCircle, BookMarked, Target } from "lucide-react";
+import { BookOpen, Clock, TrendingUp, Heart, ArrowLeft, CheckCircle, BookMarked, Target, X } from "lucide-react";
 import { isLoggedIn } from "../lib/auth";
 
 // TODO: 실제 API 연동
@@ -18,10 +18,10 @@ const mockReaderStats = {
 };
 
 const mockReadingList = [
-  { id: "1", title: "별빛 요정의 모험", author: "하늘봄", progress: 75, lastRead: "2시간 전", totalPages: 12 },
-  { id: "2", title: "숲속 친구들", author: "초록나무", progress: 40, lastRead: "어제", totalPages: 8 },
-  { id: "3", title: "구름 위의 집", author: "하늘봄", progress: 20, lastRead: "3일 전", totalPages: 16 },
-  { id: "4", title: "마법의 정원", author: "봄햇살", progress: 90, lastRead: "5일 전", totalPages: 10 },
+  { id: "1", title: "별빛 요정의 모험", author: "하늘봄", progress: 75, lastRead: "2시간 전", lastReadMinutes: 120, totalPages: 12 },
+  { id: "2", title: "숲속 친구들", author: "초록나무", progress: 40, lastRead: "어제", lastReadMinutes: 1440, totalPages: 8 },
+  { id: "3", title: "구름 위의 집", author: "하늘봄", progress: 20, lastRead: "3일 전", lastReadMinutes: 4320, totalPages: 16 },
+  { id: "4", title: "마법의 정원", author: "봄햇살", progress: 90, lastRead: "5일 전", lastReadMinutes: 7200, totalPages: 10 },
 ];
 
 const mockCompletedRecent = [
@@ -32,12 +32,47 @@ const mockCompletedRecent = [
 
 const ReaderDashboardPage = () => {
   const navigate = useNavigate();
+  const [readingSort, setReadingSort] = useState<"high" | "low" | "recent">("recent");
+  const [monthlyGoal, setMonthlyGoal] = useState<number>(mockReaderStats.monthlyGoal);
+  const [goalDraft, setGoalDraft] = useState<string>(String(mockReaderStats.monthlyGoal));
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn()) navigate("/login");
   }, [navigate]);
 
-  const goalPercent = Math.round((mockReaderStats.monthlyCompleted / mockReaderStats.monthlyGoal) * 100);
+  const goalPercent = Math.min(100, Math.round((mockReaderStats.monthlyCompleted / monthlyGoal) * 100));
+
+  const sortedReadingList = useMemo(() => {
+    const list = [...mockReadingList];
+
+    if (readingSort === "high") {
+      return list.sort((a, b) => b.progress - a.progress);
+    }
+
+    if (readingSort === "low") {
+      return list.sort((a, b) => a.progress - b.progress);
+    }
+
+    return list.sort((a, b) => a.lastReadMinutes - b.lastReadMinutes);
+  }, [readingSort]);
+
+  const openGoalModal = () => {
+    setGoalDraft(String(monthlyGoal));
+    setIsGoalModalOpen(true);
+  };
+
+  const closeGoalModal = () => {
+    setIsGoalModalOpen(false);
+  };
+
+  const saveGoal = () => {
+    const parsed = Number(goalDraft);
+    if (!Number.isFinite(parsed)) return;
+    const safeValue = Math.max(1, Math.min(100, Math.round(parsed)));
+    setMonthlyGoal(safeValue);
+    setIsGoalModalOpen(false);
+  };
 
   return (
     <div className="min-h-screen pt-24 md:pt-32 pb-20 px-4 md:px-6">
@@ -84,12 +119,25 @@ const ReaderDashboardPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/20">
-            <h2 className="text-xl font-headline font-bold text-on-surface mb-6 flex items-center gap-2">
-              <BookMarked size={20} className="text-primary" />
-              읽고 있는 책
-            </h2>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h2 className="text-xl font-headline font-bold text-on-surface flex items-center gap-2">
+                <BookMarked size={20} className="text-primary" />
+                읽고 있는 책
+              </h2>
+              <select
+                value={readingSort}
+                onChange={(e) => setReadingSort(e.target.value as "high" | "low" | "recent")}
+                className="w-full sm:w-auto rounded-lg border border-outline-variant/40 bg-white px-3 py-2 text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+                aria-label="읽고 있는 책 정렬"
+              >
+                <option value="high">많이 읽은순</option>
+                <option value="low">적게 읽은순</option>
+                <option value="recent">최신으로 읽은순</option>
+              </select>
+            </div>
+
             <div className="space-y-4">
-              {mockReadingList.map((book) => (
+              {sortedReadingList.map((book) => (
                 <Link
                   key={book.id}
                   to={`/read/${book.id}`}
@@ -115,10 +163,19 @@ const ReaderDashboardPage = () => {
 
           <div className="space-y-4">
             <div className="bg-surface-container-lowest rounded-3xl p-6 border border-outline-variant/20">
-              <h3 className="font-headline font-bold text-on-surface mb-4 flex items-center gap-2">
-                <Target size={18} className="text-tertiary" />
-                이번 달 목표
-              </h3>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="font-headline font-bold text-on-surface flex items-center gap-2">
+                  <Target size={18} className="text-tertiary" />
+                  이번 달 목표
+                </h3>
+                <button
+                  type="button"
+                  onClick={openGoalModal}
+                  className="rounded-lg border border-outline-variant/40 px-3 py-1.5 text-xs font-bold text-on-surface-variant hover:bg-surface-container-low transition-colors"
+                >
+                  설정
+                </button>
+              </div>
               <div className="flex items-center gap-4 mb-3">
                 <div className="relative w-20 h-20">
                   <svg className="w-20 h-20 -rotate-90" viewBox="0 0 36 36">
@@ -141,7 +198,7 @@ const ReaderDashboardPage = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-headline font-bold text-on-surface">
-                    {mockReaderStats.monthlyCompleted}/{mockReaderStats.monthlyGoal}
+                    {mockReaderStats.monthlyCompleted}/{monthlyGoal}
                   </p>
                   <p className="text-xs text-on-surface-variant">완독 목표</p>
                 </div>
@@ -175,6 +232,59 @@ const ReaderDashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {isGoalModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40"
+          onClick={closeGoalModal}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl border border-outline-variant/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-headline font-bold text-on-surface">이번 달 목표 설정</h4>
+              <button
+                type="button"
+                onClick={closeGoalModal}
+                className="w-8 h-8 rounded-full hover:bg-surface-container flex items-center justify-center"
+                aria-label="닫기"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant">완독 목표 권수</label>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={goalDraft}
+              onChange={(e) => setGoalDraft(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-outline-variant/30 px-4 py-3 text-on-surface font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+
+            <p className="mt-2 text-xs text-on-surface-variant">1권 ~ 100권 사이로 설정할 수 있어요.</p>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={closeGoalModal}
+                className="flex-1 rounded-xl py-3 font-bold border border-outline-variant/40 text-on-surface-variant hover:bg-surface-container-low"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={saveGoal}
+                className="flex-1 rounded-xl py-3 font-bold bg-primary text-white hover:bg-secondary"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
