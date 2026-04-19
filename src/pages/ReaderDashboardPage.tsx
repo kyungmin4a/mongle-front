@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "motion/react";
+import { animate, motion } from "motion/react";
 import { BookOpen, Clock, TrendingUp, Heart, ArrowLeft, CheckCircle, BookMarked, Target, X } from "lucide-react";
 import { isLoggedIn } from "../lib/auth";
 
@@ -46,42 +46,18 @@ const ReaderDashboardPage = () => {
   const goalPercent = Math.min(100, Math.round((mockReaderStats.monthlyCompleted / monthlyGoal) * 100));
 
   useEffect(() => {
-    const from = animatedGoalPercentRef.current;
-    const to = goalPercent;
-    if (from === to) {
-      // 목표값과 동일하면 루프를 돌리지 않음
-      if (animatedGoalPercent !== to) {
-        setAnimatedGoalPercent(to);
-      }
-      return;
-    }
-
-    const duration = 700;
-    const start = performance.now();
-    let frameId = 0;
-
-    const tick = (now: number) => {
-      const progress = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const next = Math.round(from + (to - from) * eased);
-
-      // 반올림 결과가 동일하면 상태 업데이트를 건너뜀
-      if (next !== animatedGoalPercentRef.current) {
-        animatedGoalPercentRef.current = next;
-        setAnimatedGoalPercent(next);
-      }
-
-      if (progress < 1) {
-        frameId = requestAnimationFrame(tick);
-      } else if (animatedGoalPercentRef.current !== to) {
-        // 마지막 프레임 보정
-        animatedGoalPercentRef.current = to;
-        setAnimatedGoalPercent(to);
-      }
-    };
-
-    frameId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frameId);
+    const controls = animate(animatedGoalPercentRef.current, goalPercent, {
+      duration: 0.7,
+      ease: "easeOut",
+      onUpdate: (value) => {
+        const rounded = Math.round(value);
+        if (rounded !== animatedGoalPercentRef.current) {
+          animatedGoalPercentRef.current = rounded;
+          setAnimatedGoalPercent(rounded);
+        }
+      },
+    });
+    return () => controls.stop();
   }, [goalPercent]);
 
   const sortedReadingList = useMemo(() => {
