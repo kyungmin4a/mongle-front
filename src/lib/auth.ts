@@ -1,6 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mongle.cloud';
-
-// ── 유저 타입 ──
+﻿const API_BASE_URL = import.meta.env.VITE_API_URL || "https://mongle.cloud";
 
 export interface UserInfo {
   userId: string;
@@ -10,25 +8,21 @@ export interface UserInfo {
   isNewUser: boolean;
 }
 
-// ── 토큰 관리 ──
-
 export function getAccessToken(): string | null {
-  return localStorage.getItem('accessToken');
+  return localStorage.getItem("accessToken");
 }
 
 export function setAccessToken(token: string): void {
-  localStorage.setItem('accessToken', token);
+  localStorage.setItem("accessToken", token);
 }
 
 export function removeAccessToken(): void {
-  localStorage.removeItem('accessToken');
+  localStorage.removeItem("accessToken");
 }
 
 export function isLoggedIn(): boolean {
   return !!getAccessToken();
 }
-
-// ── 소셜 로그인 리다이렉트 ──
 
 export function redirectToKakaoLogin(): void {
   window.location.href = `${API_BASE_URL}/oauth2/authorization/kakao`;
@@ -38,27 +32,26 @@ export function redirectToNaverLogin(): void {
   window.location.href = `${API_BASE_URL}/oauth2/authorization/naver`;
 }
 
-// ── 로그아웃 ──
-
 export async function logout(): Promise<void> {
   try {
-    await fetchWithAuth('/api/auth/logout', { method: 'POST' });
+    // 토큰이 있을 때만 로그아웃 API 호출
+    if (getAccessToken()) {
+      await fetchWithAuth("/api/auth/logout", { method: "POST" });
+    }
   } catch {
-    // 로그아웃 API 실패해도 로컬 토큰은 삭제
+    // 로그아웃 API 실패와 무관하게 로컬 상태는 정리
   }
+
   removeAccessToken();
   clearUserCache();
-  // 잔여 쿠키 정리
   document.cookie = "token=; path=/; max-age=0";
 }
-
-// ── 토큰 갱신 ──
 
 export async function refreshAccessToken(): Promise<string | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-      method: 'POST',
-      credentials: 'include', // HttpOnly 쿠키 자동 전송
+      method: "POST",
+      credentials: "include",
     });
 
     if (!res.ok) return null;
@@ -68,26 +61,27 @@ export async function refreshAccessToken(): Promise<string | null> {
       setAccessToken(data.data.accessToken);
       return data.data.accessToken;
     }
+
     return null;
   } catch {
     return null;
   }
 }
 
-// ── 유저 정보 조회 (캐시) ──
-
 let cachedUser: UserInfo | null = null;
 let cacheTimestamp = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5분
+const CACHE_TTL = 5 * 60 * 1000;
 
 export async function fetchUserMe(force = false): Promise<UserInfo | null> {
-  // 캐시가 유효하면 바로 반환
+  // 비로그인 상태에서는 me API를 호출하지 않음
+  if (!getAccessToken()) return null;
+
   if (!force && cachedUser && Date.now() - cacheTimestamp < CACHE_TTL) {
     return cachedUser;
   }
 
   try {
-    const res = await fetchWithAuth('/api/user/me');
+    const res = await fetchWithAuth("/api/user/me");
     if (!res.ok) return null;
 
     const json = await res.json();
@@ -96,6 +90,7 @@ export async function fetchUserMe(force = false): Promise<UserInfo | null> {
       cacheTimestamp = Date.now();
       return cachedUser;
     }
+
     return null;
   } catch {
     return null;
@@ -107,42 +102,32 @@ export function clearUserCache(): void {
   cacheTimestamp = 0;
 }
 
-// ── 프로필 수정 ──
-
 export interface ProfileUpdateRequest {
   nickname: string;
   email: string;
   profileImage: string;
 }
 
-/**
- * PATCH /api/user/profile — 닉네임/이메일/프로필 이미지를 한 번에 수정.
- * 성공 시 서버에서 갱신된 UserInfo를 반환하고 로컬 캐시도 갱신한다.
- *
- * 에러 매핑:
- * - 409 (USER_002): 이메일 중복
- * - 404 (USER_001): 사용자 없음
- */
 export async function updateUserProfile(request: ProfileUpdateRequest): Promise<UserInfo> {
-  const res = await fetchWithAuth('/api/user/profile', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetchWithAuth("/api/user/profile", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
   });
 
   if (res.status === 409) {
-    throw new Error('이미 사용 중인 이메일입니다.');
+    throw new Error("이미 사용 중인 이메일입니다.");
   }
   if (res.status === 404) {
-    throw new Error('사용자를 찾을 수 없습니다.');
+    throw new Error("사용자를 찾을 수 없습니다.");
   }
   if (!res.ok) {
-    throw new Error('프로필 저장에 실패했습니다.');
+    throw new Error("프로필 수정에 실패했습니다.");
   }
 
   const json = await res.json();
   if (!json.success || !json.data) {
-    throw new Error('프로필 저장 응답이 올바르지 않습니다.');
+    throw new Error("프로필 수정 응답이 올바르지 않습니다.");
   }
 
   const updated = json.data as UserInfo;
@@ -151,35 +136,32 @@ export async function updateUserProfile(request: ProfileUpdateRequest): Promise<
   return updated;
 }
 
-// ── 인증 포함 API 호출 ──
-
-export async function fetchWithAuth(
-  path: string,
-  options: RequestInit = {}
-): Promise<Response> {
+export async function fetchWithAuth(path: string, options: RequestInit = {}): Promise<Response> {
   const url = `${API_BASE_URL}${path}`;
 
   const headers = new Headers(options.headers);
   const token = getAccessToken();
+  const hadToken = !!token;
+
   if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   let res = await fetch(url, {
     ...options,
     headers,
-    credentials: 'include',
+    credentials: "include",
   });
 
-  // 401이면 토큰 갱신 후 재시도
-  if (res.status === 401) {
+  // 토큰이 있을 때만 refresh 재시도
+  if (res.status === 401 && hadToken) {
     const newToken = await refreshAccessToken();
     if (newToken) {
-      headers.set('Authorization', `Bearer ${newToken}`);
+      headers.set("Authorization", `Bearer ${newToken}`);
       res = await fetch(url, {
         ...options,
         headers,
-        credentials: 'include',
+        credentials: "include",
       });
     }
   }
