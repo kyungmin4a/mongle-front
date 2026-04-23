@@ -105,17 +105,27 @@ const AuthorDashboardPage = () => {
               <BarChart3 size={20} className="text-primary" />
               작품별 성과
             </h2>
-            <select
-              value={performanceSort}
-              onChange={(e) => setPerformanceSort(e.target.value as PerformanceSort)}
-              className="w-full sm:w-auto rounded-lg border border-outline-variant/40 bg-white px-3 py-2 text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
-              aria-label="작품별 성과 정렬"
-            >
-              <option value="reads">조회수 높은순</option>
-              <option value="likes">좋아요 높은순</option>
-              <option value="rating">평점 높은순</option>
-              <option value="revenue">수익 높은순</option>
-            </select>
+            <div className="flex flex-wrap gap-2">
+              {([
+                { key: "reads", label: "조회수" },
+                { key: "likes", label: "좋아요" },
+                { key: "rating", label: "평점" },
+                { key: "revenue", label: "수익" },
+              ] as const).map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setPerformanceSort(item.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs md:text-sm font-bold transition-colors ${
+                    performanceSort === item.key
+                      ? "bg-primary text-on-primary"
+                      : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="hidden md:grid grid-cols-12 gap-4 px-4 pb-3 text-xs font-bold text-on-surface-variant uppercase tracking-wider">
