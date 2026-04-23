@@ -214,11 +214,15 @@ const AuthorSection = ({ title, icon, items }: AuthorSectionProps) => {
                   decoding="async"
                 />
               </div>
-              <div
+              <motion.div
                 className={`rounded-t-2xl bg-gradient-to-b ${podiumToneClass[rank]} ${podiumHeightClass[rank]} flex items-center justify-center shadow-inner`}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                transition={{ duration: 0.55, ease: "easeOut", delay: rank * 0.08 }}
+                style={{ transformOrigin: "bottom" }}
               >
                 <span className="text-3xl md:text-4xl font-black leading-none">{rank}</span>
-              </div>
+              </motion.div>
             </div>
           );
         })}
@@ -279,11 +283,15 @@ const BookSection = ({ title, icon, items, metric }: BookSectionProps) => {
                   decoding="async"
                 />
               </div>
-              <div
+              <motion.div
                 className={`rounded-t-2xl bg-gradient-to-b ${podiumToneClass[rank]} ${podiumHeightClass[rank]} flex items-center justify-center shadow-inner`}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                transition={{ duration: 0.55, ease: "easeOut", delay: rank * 0.08 }}
+                style={{ transformOrigin: "bottom" }}
               >
                 <span className="text-3xl md:text-4xl font-black leading-none">{rank}</span>
-              </div>
+              </motion.div>
             </div>
           );
         })}
