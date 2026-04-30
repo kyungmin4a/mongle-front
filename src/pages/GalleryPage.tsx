@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { BookOpen, Search, SlidersHorizontal, X, Heart } from "lucide-react";
@@ -28,6 +28,8 @@ const GalleryPage = () => {
   const [likeCountMap, setLikeCountMap] = useState<LikeCountMap>({});
   const [likeLoadingMap, setLikeLoadingMap] = useState<LikeLoadingMap>({});
   const [likeErrorMessage, setLikeErrorMessage] = useState<string | null>(null);
+  const [likeFetchRetryTick, setLikeFetchRetryTick] = useState(0);
+
   const observerRef = useRef<HTMLDivElement>(null);
   const animatedIdsRef = useRef<Set<string>>(new Set());
   const pageRef = useRef(0);
@@ -35,6 +37,9 @@ const GalleryPage = () => {
   const hasMoreRef = useRef(true);
   const loadedPagesRef = useRef<Set<number>>(new Set());
   const initializedLikeIdsRef = useRef<Set<string>>(new Set());
+  const inFlightLikeIdsRef = useRef<Set<string>>(new Set());
+  const likeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const likeErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadMore = useCallback(async () => {
     const targetPage = pageRef.current;
@@ -84,11 +89,16 @@ const GalleryPage = () => {
   }, [loadMore]);
 
   useEffect(() => {
-    const targets = books.filter((book) => !initializedLikeIdsRef.current.has(book.bookId));
+    const targets = books.filter(
+      (book) =>
+        !initializedLikeIdsRef.current.has(book.bookId) &&
+        !inFlightLikeIdsRef.current.has(book.bookId)
+    );
     if (targets.length === 0) return;
-    targets.forEach((book) => initializedLikeIdsRef.current.add(book.bookId));
 
     let cancelled = false;
+    let hasFailure = false;
+    targets.forEach((book) => inFlightLikeIdsRef.current.add(book.bookId));
 
     Promise.all(
       targets.map((book) =>
@@ -102,8 +112,16 @@ const GalleryPage = () => {
       const nextLiked: LikedMap = {};
       const nextCount: LikeCountMap = {};
 
-      results.forEach((result) => {
-        if (!result) return;
+      results.forEach((result, index) => {
+        const bookId = targets[index].bookId;
+        inFlightLikeIdsRef.current.delete(bookId);
+
+        if (!result) {
+          hasFailure = true;
+          return;
+        }
+
+        initializedLikeIdsRef.current.add(bookId);
         nextLiked[result.bookId] = result.status.likedByMe;
         nextCount[result.bookId] = result.status.likeCount;
       });
@@ -114,12 +132,26 @@ const GalleryPage = () => {
       if (Object.keys(nextCount).length > 0) {
         setLikeCountMap((prev) => ({ ...prev, ...nextCount }));
       }
+
+      if (hasFailure) {
+        if (likeRetryTimerRef.current) clearTimeout(likeRetryTimerRef.current);
+        likeRetryTimerRef.current = setTimeout(() => {
+          setLikeFetchRetryTick((prev) => prev + 1);
+        }, 1500);
+      }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [books]);
+  }, [books, likeFetchRetryTick]);
+
+  useEffect(() => {
+    return () => {
+      if (likeRetryTimerRef.current) clearTimeout(likeRetryTimerRef.current);
+      if (likeErrorTimerRef.current) clearTimeout(likeErrorTimerRef.current);
+    };
+  }, []);
 
   const visibleBooks = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -157,7 +189,8 @@ const GalleryPage = () => {
     } catch (error) {
       console.error("좋아요 처리 실패:", error);
       setLikeErrorMessage(error instanceof Error ? error.message : "좋아요 처리에 실패했습니다.");
-      window.setTimeout(() => setLikeErrorMessage(null), 2500);
+      if (likeErrorTimerRef.current) clearTimeout(likeErrorTimerRef.current);
+      likeErrorTimerRef.current = setTimeout(() => setLikeErrorMessage(null), 2500);
     } finally {
       setLikeLoadingMap((prev) => ({ ...prev, [bookId]: false }));
     }
@@ -334,4 +367,3 @@ const GalleryPage = () => {
 };
 
 export default GalleryPage;
-
