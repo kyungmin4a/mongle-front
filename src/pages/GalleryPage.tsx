@@ -2,12 +2,20 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { BookOpen, Search, SlidersHorizontal, X, Heart } from "lucide-react";
-import { fetchBooks, type BookItem } from "../lib/api";
+import {
+  addBookLike,
+  fetchBookLikeStatus,
+  fetchBooks,
+  removeBookLike,
+  type BookItem,
+} from "../lib/api";
 
 const PAGE_SIZE = 12;
 type SortOption = "newest" | "titleAsc" | "titleDesc";
 
 type LikedMap = Record<string, boolean>;
+type LikeCountMap = Record<string, number>;
+type LikeLoadingMap = Record<string, boolean>;
 
 const GalleryPage = () => {
   const [books, setBooks] = useState<BookItem[]>([]);
@@ -17,6 +25,8 @@ const GalleryPage = () => {
   const [sort, setSort] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [likedMap, setLikedMap] = useState<LikedMap>({});
+  const [likeCountMap, setLikeCountMap] = useState<LikeCountMap>({});
+  const [likeLoadingMap, setLikeLoadingMap] = useState<LikeLoadingMap>({});
   const observerRef = useRef<HTMLDivElement>(null);
   const animatedIdsRef = useRef<Set<string>>(new Set());
   const pageRef = useRef(0);
@@ -46,7 +56,6 @@ const GalleryPage = () => {
         pageRef.current = targetPage + 1;
       }
     } catch {
-      // API 실패 시 더 이상 로드하지 않음
       hasMoreRef.current = false;
       setHasMore(false);
     } finally {
@@ -72,6 +81,43 @@ const GalleryPage = () => {
     return () => observer.disconnect();
   }, [loadMore]);
 
+  useEffect(() => {
+    const targets = books.filter((book) => likedMap[book.bookId] === undefined || likeCountMap[book.bookId] === undefined);
+    if (targets.length === 0) return;
+
+    let cancelled = false;
+
+    Promise.all(
+      targets.map((book) =>
+        fetchBookLikeStatus(book.bookId)
+          .then((status) => ({ bookId: book.bookId, status }))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      if (cancelled) return;
+
+      const nextLiked: LikedMap = {};
+      const nextCount: LikeCountMap = {};
+
+      results.forEach((result) => {
+        if (!result) return;
+        nextLiked[result.bookId] = result.status.likedByMe;
+        nextCount[result.bookId] = result.status.likeCount;
+      });
+
+      if (Object.keys(nextLiked).length > 0) {
+        setLikedMap((prev) => ({ ...prev, ...nextLiked }));
+      }
+      if (Object.keys(nextCount).length > 0) {
+        setLikeCountMap((prev) => ({ ...prev, ...nextCount }));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [books, likedMap, likeCountMap]);
+
   const visibleBooks = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     let result = books;
@@ -89,15 +135,27 @@ const GalleryPage = () => {
     } else if (sort === "titleDesc") {
       result = [...result].sort((a, b) => b.title.localeCompare(a.title));
     }
-    // "newest"는 API가 반환한 순서를 그대로 사용 (클라이언트 재정렬 금지)
 
     return result;
   }, [books, query, sort]);
 
   const isSearching = query.trim().length > 0;
 
-  const toggleLike = (bookId: string) => {
-    setLikedMap((prev) => ({ ...prev, [bookId]: !prev[bookId] }));
+  const toggleLike = async (bookId: string) => {
+    if (likeLoadingMap[bookId]) return;
+
+    setLikeLoadingMap((prev) => ({ ...prev, [bookId]: true }));
+    const liked = likedMap[bookId] ?? false;
+
+    try {
+      const status = liked ? await removeBookLike(bookId) : await addBookLike(bookId);
+      setLikedMap((prev) => ({ ...prev, [bookId]: status.likedByMe }));
+      setLikeCountMap((prev) => ({ ...prev, [bookId]: status.likeCount }));
+    } catch {
+      // 실패 시 기존 상태 유지
+    } finally {
+      setLikeLoadingMap((prev) => ({ ...prev, [bookId]: false }));
+    }
   };
 
   return (
@@ -176,13 +234,15 @@ const GalleryPage = () => {
           )}
 
           <p className="text-sm text-on-surface-variant">
-            {isSearching ? `\"${query}\" 검색 결과` : "전체 작품"} ({visibleBooks.length}개)
+            {isSearching ? `"${query}" 검색 결과` : "전체 작품"} ({visibleBooks.length}개)
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {visibleBooks.map((book, i) => {
             const liked = likedMap[book.bookId] ?? false;
+            const likeCount = likeCountMap[book.bookId];
+            const liking = likeLoadingMap[book.bookId] ?? false;
             const alreadyAnimated = animatedIdsRef.current.has(book.bookId);
             if (!alreadyAnimated) animatedIdsRef.current.add(book.bookId);
             return (
@@ -209,17 +269,24 @@ const GalleryPage = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        toggleLike(book.bookId);
+                        void toggleLike(book.bookId);
                       }}
+                      disabled={liking}
                       className={`absolute right-2 bottom-2 z-20 w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-sm transition-all ${
                         liked
                           ? "bg-rose-500/95 border-rose-400 text-white"
                           : "bg-white/90 border-white text-rose-500 hover:bg-white"
-                      }`}
+                      } ${liking ? "opacity-70" : ""}`}
                       aria-label={liked ? "좋아요 취소" : "좋아요"}
                     >
                       <Heart size={18} className={liked ? "fill-current" : ""} />
                     </button>
+
+                    {typeof likeCount === "number" && (
+                      <div className="absolute left-2 bottom-2 z-20 px-2 py-1 rounded-full text-[11px] font-bold bg-black/55 text-white">
+                        ❤ {likeCount}
+                      </div>
+                    )}
 
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center">
                       <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary scale-0 group-hover:scale-100 transition-transform duration-500">
@@ -261,3 +328,4 @@ const GalleryPage = () => {
 };
 
 export default GalleryPage;
+
