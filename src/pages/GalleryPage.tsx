@@ -246,7 +246,12 @@ const GalleryPage = () => {
 
                     <button
                       type="button"
-                      onClick={() => void toggleLike(book.bookId)}
+                      onClick={() => {
+                        if (import.meta.env.DEV) {
+                          console.log("[likes] heart button onClick:", book.bookId);
+                        }
+                        void toggleLike(book.bookId);
+                      }}
                       disabled={liking}
                       className={`absolute right-2 bottom-2 z-30 w-10 h-10 rounded-full flex items-center justify-center border backdrop-blur-sm transition-all ${
                         liked
