@@ -21,10 +21,16 @@ export interface PageResponse<T> {
 }
 
 export async function fetchBooks(page: number, size: number): Promise<PageResponse<BookItem>> {
-  const res = await fetch(`${API_BASE_URL}/api/books?page=${page}&size=${size}`);
-  if (!res.ok) throw new Error("Failed to fetch books");
-  const json = await res.json();
-  return json.data;
+  const res = await fetchWithAuth(`/api/books?page=${page}&size=${size}`, {
+    method: "GET",
+  });
+  const json = await res.json().catch(() => null);
+
+  if (!res.ok || !json?.success || !json?.data) {
+    throw new Error(json?.error?.message || "Failed to fetch books");
+  }
+
+  return json.data as PageResponse<BookItem>;
 }
 
 export interface BookDetailPage {

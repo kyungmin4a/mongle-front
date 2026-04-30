@@ -120,8 +120,10 @@ const GalleryPage = () => {
   const toggleLike = async (bookId: string) => {
     if (likeLoadingMap[bookId]) return;
 
+    const book = books.find((b) => b.bookId === bookId);
+    const liked = likedMap[bookId] ?? book?.liked ?? false;
+
     setLikeLoadingMap((prev) => ({ ...prev, [bookId]: true }));
-    const liked = likedMap[bookId] ?? false;
 
     try {
       const status = liked ? await removeBookLike(bookId) : await addBookLike(bookId);
