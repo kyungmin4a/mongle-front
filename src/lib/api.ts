@@ -7,6 +7,7 @@ export interface BookItem {
   title: string;
   coverImageUrl: string;
   authorName: string;
+  liked?: boolean;
 }
 
 export interface PageResponse<T> {

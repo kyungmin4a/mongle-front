@@ -2,19 +2,12 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { BookOpen, Search, SlidersHorizontal, X, Heart } from "lucide-react";
-import {
-  addBookLike,
-  fetchBookLikeStatus,
-  fetchBooks,
-  removeBookLike,
-  type BookItem,
-} from "../lib/api";
+import { addBookLike, fetchBooks, removeBookLike, type BookItem } from "../lib/api";
 
 const PAGE_SIZE = 12;
 type SortOption = "newest" | "titleAsc" | "titleDesc";
 
 type LikedMap = Record<string, boolean>;
-type LikeCountMap = Record<string, number>;
 type LikeLoadingMap = Record<string, boolean>;
 
 const GalleryPage = () => {
@@ -25,10 +18,8 @@ const GalleryPage = () => {
   const [sort, setSort] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [likedMap, setLikedMap] = useState<LikedMap>({});
-  const [likeCountMap, setLikeCountMap] = useState<LikeCountMap>({});
   const [likeLoadingMap, setLikeLoadingMap] = useState<LikeLoadingMap>({});
   const [likeErrorMessage, setLikeErrorMessage] = useState<string | null>(null);
-  const [likeFetchRetryTick, setLikeFetchRetryTick] = useState(0);
 
   const observerRef = useRef<HTMLDivElement>(null);
   const animatedIdsRef = useRef<Set<string>>(new Set());
@@ -36,9 +27,6 @@ const GalleryPage = () => {
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
   const loadedPagesRef = useRef<Set<number>>(new Set());
-  const initializedLikeIdsRef = useRef<Set<string>>(new Set());
-  const inFlightLikeIdsRef = useRef<Set<string>>(new Set());
-  const likeRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const likeErrorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadMore = useCallback(async () => {
@@ -51,11 +39,23 @@ const GalleryPage = () => {
     try {
       loadedPagesRef.current.add(targetPage);
       const data = await fetchBooks(targetPage, PAGE_SIZE);
+
       setBooks((prev) => {
         const map = new Map(prev.map((b) => [b.bookId, b]));
         data.content.forEach((b) => map.set(b.bookId, b));
         return Array.from(map.values());
       });
+
+      setLikedMap((prev) => {
+        const next = { ...prev };
+        data.content.forEach((b) => {
+          if (typeof b.liked === "boolean") {
+            next[b.bookId] = b.liked;
+          }
+        });
+        return next;
+      });
+
       const nextHasMore = !data.last;
       hasMoreRef.current = nextHasMore;
       setHasMore(nextHasMore);
@@ -89,66 +89,7 @@ const GalleryPage = () => {
   }, [loadMore]);
 
   useEffect(() => {
-    const targets = books.filter(
-      (book) =>
-        !initializedLikeIdsRef.current.has(book.bookId) &&
-        !inFlightLikeIdsRef.current.has(book.bookId)
-    );
-    if (targets.length === 0) return;
-
-    let cancelled = false;
-    let hasFailure = false;
-    targets.forEach((book) => inFlightLikeIdsRef.current.add(book.bookId));
-
-    Promise.all(
-      targets.map((book) =>
-        fetchBookLikeStatus(book.bookId)
-          .then((status) => ({ bookId: book.bookId, status }))
-          .catch(() => null)
-      )
-    ).then((results) => {
-      if (cancelled) return;
-
-      const nextLiked: LikedMap = {};
-      const nextCount: LikeCountMap = {};
-
-      results.forEach((result, index) => {
-        const bookId = targets[index].bookId;
-        inFlightLikeIdsRef.current.delete(bookId);
-
-        if (!result) {
-          hasFailure = true;
-          return;
-        }
-
-        initializedLikeIdsRef.current.add(bookId);
-        nextLiked[result.bookId] = result.status.likedByMe;
-        nextCount[result.bookId] = result.status.likeCount;
-      });
-
-      if (Object.keys(nextLiked).length > 0) {
-        setLikedMap((prev) => ({ ...prev, ...nextLiked }));
-      }
-      if (Object.keys(nextCount).length > 0) {
-        setLikeCountMap((prev) => ({ ...prev, ...nextCount }));
-      }
-
-      if (hasFailure) {
-        if (likeRetryTimerRef.current) clearTimeout(likeRetryTimerRef.current);
-        likeRetryTimerRef.current = setTimeout(() => {
-          setLikeFetchRetryTick((prev) => prev + 1);
-        }, 1500);
-      }
-    });
-
     return () => {
-      cancelled = true;
-    };
-  }, [books, likeFetchRetryTick]);
-
-  useEffect(() => {
-    return () => {
-      if (likeRetryTimerRef.current) clearTimeout(likeRetryTimerRef.current);
       if (likeErrorTimerRef.current) clearTimeout(likeErrorTimerRef.current);
     };
   }, []);
@@ -185,7 +126,7 @@ const GalleryPage = () => {
     try {
       const status = liked ? await removeBookLike(bookId) : await addBookLike(bookId);
       setLikedMap((prev) => ({ ...prev, [bookId]: status.likedByMe }));
-      setLikeCountMap((prev) => ({ ...prev, [bookId]: status.likeCount }));
+      setBooks((prev) => prev.map((b) => (b.bookId === bookId ? { ...b, liked: status.likedByMe } : b)));
     } catch (error) {
       console.error("좋아요 처리 실패:", error);
       setLikeErrorMessage(error instanceof Error ? error.message : "좋아요 처리에 실패했습니다.");
@@ -279,11 +220,11 @@ const GalleryPage = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
           {visibleBooks.map((book, i) => {
-            const liked = likedMap[book.bookId] ?? false;
-            const likeCount = likeCountMap[book.bookId];
+            const liked = likedMap[book.bookId] ?? book.liked ?? false;
             const liking = likeLoadingMap[book.bookId] ?? false;
             const alreadyAnimated = animatedIdsRef.current.has(book.bookId);
             if (!alreadyAnimated) animatedIdsRef.current.add(book.bookId);
+
             return (
               <motion.div
                 key={book.bookId}
@@ -320,12 +261,6 @@ const GalleryPage = () => {
                     >
                       <Heart size={18} className={liked ? "fill-current" : ""} />
                     </button>
-
-                    {typeof likeCount === "number" && (
-                      <div className="absolute left-2 bottom-2 z-20 px-2 py-1 rounded-full text-[11px] font-bold bg-black/55 text-white">
-                        ❤ {likeCount}
-                      </div>
-                    )}
 
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center">
                       <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-primary scale-0 group-hover:scale-100 transition-transform duration-500">
