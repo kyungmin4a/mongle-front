@@ -216,3 +216,28 @@ export async function fetchWeeklyPopularBooks(params?: RankingDateParams): Promi
     "이번 주 인기 책 조회에 실패했습니다."
   );
 }
+
+export type MonthlyProlificAuthorItem = WeeklyProlificAuthorItem;
+export type MonthlyPopularAuthorItem = WeeklyPopularAuthorItem;
+export type MonthlyPopularBookItem = WeeklyPopularBookItem;
+
+export async function fetchMonthlyProlificAuthors(params?: Pick<RankingDateParams, "year" | "month">): Promise<MonthlyProlificAuthorItem[]> {
+  return fetchRankingList<MonthlyProlificAuthorItem>(
+    `/api/ranking/monthly/prolific-authors${buildRankingQuery(params)}`,
+    "이달의 다작 작가 조회에 실패했습니다."
+  );
+}
+
+export async function fetchMonthlyPopularAuthors(params?: Pick<RankingDateParams, "year" | "month">): Promise<MonthlyPopularAuthorItem[]> {
+  return fetchRankingList<MonthlyPopularAuthorItem>(
+    `/api/ranking/monthly/popular-authors${buildRankingQuery(params)}`,
+    "이달의 인기 작가 조회에 실패했습니다."
+  );
+}
+
+export async function fetchMonthlyPopularBooks(params?: Pick<RankingDateParams, "year" | "month">): Promise<MonthlyPopularBookItem[]> {
+  return fetchRankingList<MonthlyPopularBookItem>(
+    `/api/ranking/monthly/popular-books${buildRankingQuery(params)}`,
+    "이달의 인기 책 조회에 실패했습니다."
+  );
+}
