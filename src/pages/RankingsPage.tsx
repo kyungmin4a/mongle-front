@@ -227,10 +227,12 @@ const RankingsPage = () => {
   const [weeklyPopularAuthors, setWeeklyPopularAuthors] = useState<AuthorRankItem[]>([]);
   const [weeklyPopularBooks, setWeeklyPopularBooks] = useState<BookRankItem[]>([]);
   const [loadingWeekly, setLoadingWeekly] = useState(false);
+  const [weeklyLoaded, setWeeklyLoaded] = useState(false);
   const [monthlyProlific, setMonthlyProlific] = useState<AuthorRankItem[]>([]);
   const [monthlyPopularAuthors, setMonthlyPopularAuthors] = useState<AuthorRankItem[]>([]);
   const [monthlyPopularBooks, setMonthlyPopularBooks] = useState<BookRankItem[]>([]);
   const [loadingMonthly, setLoadingMonthly] = useState(false);
+  const [monthlyLoaded, setMonthlyLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -255,7 +257,10 @@ const RankingsPage = () => {
         setWeeklyPopularBooks([]);
       })
       .finally(() => {
-        if (!cancelled) setLoadingWeekly(false);
+        if (!cancelled) {
+          setLoadingWeekly(false);
+          setWeeklyLoaded(true);
+        }
       });
 
     return () => {
@@ -286,7 +291,10 @@ const RankingsPage = () => {
         setMonthlyPopularBooks([]);
       })
       .finally(() => {
-        if (!cancelled) setLoadingMonthly(false);
+        if (!cancelled) {
+          setLoadingMonthly(false);
+          setMonthlyLoaded(true);
+        }
       });
 
     return () => {
@@ -297,19 +305,19 @@ const RankingsPage = () => {
   const current = useMemo(() => {
     if (period === "weekly") {
       return {
-        prolificAuthors: weeklyProlific.length > 0 ? weeklyProlific : rankingData.weekly.prolificAuthors,
-        likedAuthors: weeklyPopularAuthors.length > 0 ? weeklyPopularAuthors : rankingData.weekly.likedAuthors,
-        likedBooks: weeklyPopularBooks.length > 0 ? weeklyPopularBooks : rankingData.weekly.likedBooks,
+        prolificAuthors: weeklyLoaded ? weeklyProlific : rankingData.weekly.prolificAuthors,
+        likedAuthors: weeklyLoaded ? weeklyPopularAuthors : rankingData.weekly.likedAuthors,
+        likedBooks: weeklyLoaded ? weeklyPopularBooks : rankingData.weekly.likedBooks,
         salesBooks: rankingData.weekly.salesBooks,
       };
     }
     return {
-      prolificAuthors: monthlyProlific.length > 0 ? monthlyProlific : rankingData.monthly.prolificAuthors,
-      likedAuthors: monthlyPopularAuthors.length > 0 ? monthlyPopularAuthors : rankingData.monthly.likedAuthors,
-      likedBooks: monthlyPopularBooks.length > 0 ? monthlyPopularBooks : rankingData.monthly.likedBooks,
+      prolificAuthors: monthlyLoaded ? monthlyProlific : rankingData.monthly.prolificAuthors,
+      likedAuthors: monthlyLoaded ? monthlyPopularAuthors : rankingData.monthly.likedAuthors,
+      likedBooks: monthlyLoaded ? monthlyPopularBooks : rankingData.monthly.likedBooks,
       salesBooks: rankingData.monthly.salesBooks,
     };
-  }, [period, weeklyProlific, weeklyPopularAuthors, weeklyPopularBooks, monthlyProlific, monthlyPopularAuthors, monthlyPopularBooks]);
+  }, [period, weeklyLoaded, weeklyProlific, weeklyPopularAuthors, weeklyPopularBooks, monthlyLoaded, monthlyProlific, monthlyPopularAuthors, monthlyPopularBooks]);
 
   return (
     <div className="min-h-screen pt-24 md:pt-32 pb-20 px-4 md:px-6 bg-[radial-gradient(circle_at_top_right,rgba(63,87,187,0.16),transparent_45%),radial-gradient(circle_at_bottom_left,rgba(59,103,93,0.12),transparent_45%)]">
