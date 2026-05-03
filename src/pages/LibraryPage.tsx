@@ -16,39 +16,119 @@ const LibraryPage = () => {
   const [draftBooks, setDraftBooks] = useState<MyBookItem[]>([]);
   const [inProgressBooks, setInProgressBooks] = useState<MyBookItem[]>([]);
   const [completedBooks, setCompletedBooks] = useState<MyBookItem[]>([]);
+
+  const [draftPage, setDraftPage] = useState(0);
+  const [inProgressPage, setInProgressPage] = useState(0);
+  const [completedPage, setCompletedPage] = useState(0);
+
+  const [hasMoreDraft, setHasMoreDraft] = useState(false);
+  const [hasMoreInProgress, setHasMoreInProgress] = useState(false);
+  const [hasMoreCompleted, setHasMoreCompleted] = useState(false);
+
   const [loading, setLoading] = useState(true);
+  const [loadingMoreWorking, setLoadingMoreWorking] = useState(false);
+  const [loadingMoreCompleted, setLoadingMoreCompleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const formatCreatedAt = (createdAt: string) => {
+    const parsed = Date.parse(createdAt);
+    if (Number.isNaN(parsed)) return "";
+    return new Date(parsed).toLocaleDateString("ko-KR");
+  };
+
+  const loadInitial = async () => {
     setLoading(true);
     setError(null);
 
-    Promise.all([
-      fetchMyBooks(0, PAGE_SIZE, "DRAFT"),
-      fetchMyBooks(0, PAGE_SIZE, "IN_PROGRESS"),
-      fetchMyBooks(0, PAGE_SIZE, "COMPLETED"),
-    ])
-      .then(([draft, inProgress, completed]) => {
-        if (cancelled) return;
-        setDraftBooks(draft.content ?? []);
-        setInProgressBooks(inProgress.content ?? []);
-        setCompletedBooks(completed.content ?? []);
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : "내 책 목록을 불러오지 못했습니다.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    try {
+      const [draft, inProgress, completed] = await Promise.all([
+        fetchMyBooks(0, PAGE_SIZE, "DRAFT"),
+        fetchMyBooks(0, PAGE_SIZE, "IN_PROGRESS"),
+        fetchMyBooks(0, PAGE_SIZE, "COMPLETED"),
+      ]);
 
-    return () => {
-      cancelled = true;
-    };
+      setDraftBooks(draft.content ?? []);
+      setInProgressBooks(inProgress.content ?? []);
+      setCompletedBooks(completed.content ?? []);
+
+      setDraftPage(0);
+      setInProgressPage(0);
+      setCompletedPage(0);
+
+      setHasMoreDraft(!draft.last);
+      setHasMoreInProgress(!inProgress.last);
+      setHasMoreCompleted(!completed.last);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "내 책 목록을 불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadInitial();
   }, []);
 
   const workingBooks = useMemo(() => [...draftBooks, ...inProgressBooks], [draftBooks, inProgressBooks]);
+  const hasMoreWorking = hasMoreDraft || hasMoreInProgress;
+
+  const loadMoreWorking = async () => {
+    if (loadingMoreWorking || !hasMoreWorking) return;
+
+    setLoadingMoreWorking(true);
+    setError(null);
+
+    try {
+      const tasks: Promise<void>[] = [];
+
+      if (hasMoreDraft) {
+        const nextDraftPage = draftPage + 1;
+        tasks.push(
+          fetchMyBooks(nextDraftPage, PAGE_SIZE, "DRAFT").then((res) => {
+            setDraftBooks((prev) => [...prev, ...(res.content ?? [])]);
+            setDraftPage(nextDraftPage);
+            setHasMoreDraft(!res.last);
+          })
+        );
+      }
+
+      if (hasMoreInProgress) {
+        const nextProgressPage = inProgressPage + 1;
+        tasks.push(
+          fetchMyBooks(nextProgressPage, PAGE_SIZE, "IN_PROGRESS").then((res) => {
+            setInProgressBooks((prev) => [...prev, ...(res.content ?? [])]);
+            setInProgressPage(nextProgressPage);
+            setHasMoreInProgress(!res.last);
+          })
+        );
+      }
+
+      await Promise.all(tasks);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "작업 중 목록을 더 불러오지 못했습니다.");
+    } finally {
+      setLoadingMoreWorking(false);
+    }
+  };
+
+  const loadMoreCompleted = async () => {
+    if (loadingMoreCompleted || !hasMoreCompleted) return;
+
+    setLoadingMoreCompleted(true);
+    setError(null);
+
+    try {
+      const nextPage = completedPage + 1;
+      const res = await fetchMyBooks(nextPage, PAGE_SIZE, "COMPLETED");
+      setCompletedBooks((prev) => [...prev, ...(res.content ?? [])]);
+      setCompletedPage(nextPage);
+      setHasMoreCompleted(!res.last);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "완성 작품을 더 불러오지 못했습니다.");
+    } finally {
+      setLoadingMoreCompleted(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pt-24 md:pt-32 pb-20 px-4 md:px-6">
@@ -65,7 +145,18 @@ const LibraryPage = () => {
         </div>
 
         {loading && <p className="text-on-surface-variant">책 목록을 불러오는 중...</p>}
-        {error && <p className="text-red-600 font-bold">{error}</p>}
+        {error && (
+          <div className="flex items-center gap-3">
+            <p className="text-red-600 font-bold">{error}</p>
+            <button
+              type="button"
+              onClick={() => void loadInitial()}
+              className="px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/30 text-sm font-bold hover:bg-surface-container-high"
+            >
+              다시 시도
+            </button>
+          </div>
+        )}
 
         {!loading && !error && (
           <div className="space-y-12 md:space-y-16">
@@ -89,11 +180,22 @@ const LibraryPage = () => {
                       <div className="flex-1 space-y-2">
                         <h4 className="text-lg md:text-xl font-bold truncate">{book.title}</h4>
                         <p className="text-xs md:text-sm text-on-surface-variant">{book.authorName} · {statusLabel[book.status]}</p>
-                        <p className="text-xs text-on-surface-variant">{new Date(book.createdAt).toLocaleDateString("ko-KR")}</p>
+                        <p className="text-xs text-on-surface-variant">{formatCreatedAt(book.createdAt)}</p>
                       </div>
                     </Link>
                   ))}
                 </div>
+              )}
+
+              {hasMoreWorking && (
+                <button
+                  type="button"
+                  onClick={() => void loadMoreWorking()}
+                  disabled={loadingMoreWorking}
+                  className="px-5 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-sm font-bold hover:bg-surface-container-high disabled:opacity-60"
+                >
+                  {loadingMoreWorking ? "불러오는 중..." : "작업 중 더 보기"}
+                </button>
               )}
             </section>
 
@@ -112,6 +214,17 @@ const LibraryPage = () => {
                     </Link>
                   ))}
                 </div>
+              )}
+
+              {hasMoreCompleted && (
+                <button
+                  type="button"
+                  onClick={() => void loadMoreCompleted()}
+                  disabled={loadingMoreCompleted}
+                  className="px-5 py-2 rounded-full bg-surface-container border border-outline-variant/30 text-sm font-bold hover:bg-surface-container-high disabled:opacity-60"
+                >
+                  {loadingMoreCompleted ? "불러오는 중..." : "완성 작품 더 보기"}
+                </button>
               )}
             </section>
           </div>
