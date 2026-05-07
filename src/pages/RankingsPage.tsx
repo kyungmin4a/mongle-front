@@ -324,7 +324,7 @@ const RankingsPage = () => {
       <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] border border-white/40 bg-gradient-to-br from-primary/15 via-white to-secondary/10 p-7 md:p-10">
           <div className="relative space-y-3">
-            <h1 className="text-4xl md:text-6xl font-headline font-extrabold tracking-tight text-on-surface">{isMonthly ? "이달의 랭킹" : "이번 주 랭킹"}</h1>
+            <h1 className="text-4xl md:text-6xl font-headline font-extrabold tracking-tight text-on-surface">랭킹</h1>
             <p className="text-on-surface-variant text-base md:text-lg max-w-2xl">{periodLabel(period)} 기준으로 가장 활발한 작가와 인기 작품 TOP 3를 모아봤어요.</p>
             {period === "weekly" && loadingWeekly && <p className="text-sm text-on-surface-variant">주간 랭킹을 불러오는 중...</p>}
             {period === "monthly" && loadingMonthly && <p className="text-sm text-on-surface-variant">월간 랭킹을 불러오는 중...</p>}
@@ -339,7 +339,12 @@ const RankingsPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
           <BookSection title={`${periodLabel(period)} 좋아요 책`} icon={<Heart size={20} className="text-rose-500" />} items={current.likedBooks} metric="likes" />
-          <BookSection title={`${periodLabel(period)} 최고 매출 책`} icon={<Coins size={20} className="text-amber-600" />} items={current.salesBooks} metric="sales" />
+          <BookSection
+            title={`${periodLabel(period)} 베스트 셀러`}
+            icon={<Coins size={20} className="text-amber-600" />}
+            items={current.salesBooks}
+            metric="sales"
+          />
           <AuthorSection title={`${periodLabel(period)} 다작 작가`} icon={<BookOpen size={20} className="text-primary" />} items={current.prolificAuthors} />
           <AuthorSection title={`${periodLabel(period)} 좋아요 작가`} icon={<Trophy size={20} className="text-secondary" />} items={current.likedAuthors} />
         </div>
