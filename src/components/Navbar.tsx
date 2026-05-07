@@ -88,7 +88,7 @@ const Navbar = () => {
                   : "text-on-surface hover:text-primary hover:bg-surface-container-low",
               )}
             >
-              이달의 랭킹
+              랭킹
             </Link>
 
             <Link
